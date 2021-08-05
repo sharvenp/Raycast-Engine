@@ -1,4 +1,4 @@
-package app.engine.math;
+package app.engine.core.math;
 
 public class MathUtils {
 

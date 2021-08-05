@@ -1,4 +1,4 @@
-package app.engine.input;
+package app.engine.core.input;
 
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -9,13 +9,17 @@ import java.util.Set;
 public class Input {
 
     private static Scene scene;
+    private static Input instace;
     private static final Set<KeyCode> keysCurrentlyDown = new HashSet<>();
 
     private Input() {
     }
 
-    public static Input getInstance() {
-        return new Input();
+    public synchronized static Input getInstance() {
+        if (instace == null) {
+            instace = new Input();
+        }
+        return instace;
     }
 
     public void pollScene(Scene scene) {

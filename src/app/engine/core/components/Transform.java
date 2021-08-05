@@ -1,6 +1,6 @@
-package app.engine.assets;
+package app.engine.core.components;
 
-import app.engine.math.Vector3;
+import app.engine.core.math.Vector3;
 
 public class Transform {
 
