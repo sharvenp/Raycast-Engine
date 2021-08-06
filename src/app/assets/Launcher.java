@@ -1,6 +1,7 @@
 package app.assets;
 
 import app.assets.camera.RaycastCamera;
+import app.assets.levels.Level;
 import app.assets.player.Player;
 import app.engine.core.components.GameObject;
 import app.engine.core.game.Game;
@@ -21,20 +22,20 @@ public class Launcher extends Application {
         primaryStage.setScene(new Scene(rootPane));
         primaryStage.setResizable(false);
 
-        Camera camera = new RaycastCamera(primaryStage.getScene(), rootPane.getCanvas());
-        Game.getInstance().setCamera(camera);
+        Level map = new Level();
+
+        Camera.main = new RaycastCamera(primaryStage.getScene(), rootPane.getCanvas());
+        Game.getInstance().setMap(map);
+        Game.getInstance().setCamera(Camera.main);
         Input.getInstance().pollScene(primaryStage.getScene());
 
-        initialize();
-        Game.getInstance().initialize();
+        // Add game objects and maps here
+        Player player = new Player();
+        GameObject.gameObjects.add(player);
 
+        Game.getInstance().initialize();
         Game.getInstance().start();
         primaryStage.show();
-    }
-
-    public void initialize() {
-        // Add game objects and maps here
-        GameObject.gameObjects.add(new Player());
     }
 
     public static void main(String[] args) {

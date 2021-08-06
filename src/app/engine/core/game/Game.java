@@ -1,5 +1,6 @@
 package app.engine.core.game;
 
+import app.assets.levels.Level;
 import app.engine.core.components.GameObject;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.renderer.Camera;
@@ -8,10 +9,8 @@ import javafx.animation.AnimationTimer;
 public class Game extends AnimationTimer {
 
     private static Game instance;
-    private static Camera camera;
-
-    public static double timeNow;
-    public static double deltaTime;
+    public Camera camera;
+    public Level map;
 
     private Game(){
 
@@ -25,9 +24,11 @@ public class Game extends AnimationTimer {
         return instance;
     }
 
-    public void setCamera(Camera newCamera) {
-        camera = newCamera;
+    public void setCamera(Camera camera) {
+        this.camera = camera;
     }
+
+    public void setMap(Level map) { this.map = map; }
 
     public void initialize() throws Exception {
         if (camera == null) {
@@ -43,8 +44,8 @@ public class Game extends AnimationTimer {
 
     @Override
     public void handle(long currentNanoTime) {
-        deltaTime = ((currentNanoTime - timeNow) / 1e9);
-        timeNow = currentNanoTime;
+        Time.deltaTime = currentNanoTime - Time.now;
+        Time.now = currentNanoTime / 1e9;
 
         // update all game objects
         for (GameObject gameObject : GameObject.gameObjects) {

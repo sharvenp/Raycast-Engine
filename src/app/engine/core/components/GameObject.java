@@ -1,5 +1,7 @@
 package app.engine.core.components;
 
+import app.engine.core.exception.NoCameraException;
+
 import java.util.ArrayList;
 
 public abstract class GameObject {
@@ -30,7 +32,7 @@ public abstract class GameObject {
         this.transform = new Transform();
     }
 
-    public abstract void start();
+    public abstract void start() throws Exception;
 
     public abstract void update();
 }
