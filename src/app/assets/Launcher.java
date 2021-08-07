@@ -1,6 +1,6 @@
 package app.assets;
 
-import app.assets.camera.RaycastCamera;
+import app.engine.core.renderer.RaycastCamera;
 import app.assets.levels.Level;
 import app.assets.player.Player;
 import app.engine.core.components.GameObject;

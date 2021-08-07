@@ -1,6 +1,6 @@
 package app.assets.player;
 
-import app.assets.camera.RaycastCamera;
+import app.engine.core.renderer.RaycastCamera;
 import app.assets.levels.Level;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.game.Game;
