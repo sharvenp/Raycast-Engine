@@ -24,21 +24,22 @@ public class Launcher extends Application {
 
         primaryStage.setTitle("Some Game");
         primaryStage.setScene(new Scene(rootPane));
-        primaryStage.setResizable(false);
 
-        Level map = new Level();
-
+        // set up engine stuff
         Camera.main = new RaycastCamera(primaryStage.getScene(), rootPane.getRenderView());
-        Game.getInstance().setMap(map);
         Game.getInstance().setCamera(Camera.main);
         Input.getInstance().pollScene(primaryStage.getScene());
 
-        // Load resources
+        // load resources
         TextureLoader.loadTextures();
 
-        // Add game objects and maps here
+        // add game objects
         Player player = new Player();
         GameObject.gameObjects.add(player);
+
+        // add level
+        Level map = new Level();
+        Game.getInstance().setMap(map);
 
         Game.getInstance().initialize();
         Game.getInstance().start();

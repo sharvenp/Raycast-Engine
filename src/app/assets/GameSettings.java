@@ -13,6 +13,7 @@ public class GameSettings extends Settings {
     public static void initialize() {
         VIEW_WIDTH = 1280;
         VIEW_HEIGHT = 720;
+        TEXTURE_RESOLUTION = 64;
 
         FLOOR_COLOR = new Color(100, 100, 100);
         CEILING_COLOR = new Color(	135, 206, 235);

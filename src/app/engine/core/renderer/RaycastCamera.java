@@ -21,8 +21,6 @@ public class RaycastCamera extends Camera {
     public double xPlane;
     public double yPlane;
 
-    private final int THREADS = 5;
-
     public RaycastCamera(Scene gameScene, ImageView renderView) {
         super(gameScene, renderView);
 
@@ -62,7 +60,6 @@ public class RaycastCamera extends Camera {
         }
 
         // start the rendering
-
         IntBuffer renderBuffer = IntBuffer.allocate(GameSettings.VIEW_WIDTH * GameSettings.VIEW_HEIGHT);
         int[] pixels = renderBuffer.array();
         PixelBuffer<IntBuffer> pixelBuffer = new PixelBuffer<>(GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT, renderBuffer, PixelFormat.getIntArgbPreInstance());
@@ -75,11 +72,12 @@ public class RaycastCamera extends Camera {
         }
 
         // multi-threaded raycast rendering
-        Thread[] threads = new Thread[THREADS];
+        int numThreads = 5;
+        Thread[] threads = new Thread[numThreads];
         RaycastCamera cam = this;
-        int interval = GameSettings.VIEW_WIDTH / THREADS;
+        int interval = GameSettings.VIEW_WIDTH / numThreads;
 
-        for (int t = 0; t < THREADS; t++) {
+        for (int t = 0; t < numThreads; t++) {
 
             int finalT = t;
             Thread thread = new Thread() {
@@ -134,7 +132,9 @@ public class RaycastCamera extends Camera {
                                 side = 1;
                             }
 
-                            if (level.map[mapX][mapY] > 0) hit = true;
+                            if (level.map[mapX][mapY] > 0) {
+                                hit = true;
+                            }
                         }
 
                         if (side == 0) {
@@ -161,6 +161,7 @@ public class RaycastCamera extends Camera {
                         }
 
                         int texNum = level.map[mapX][mapY];
+                        Texture tex = textures.get(texNum);
 
                         double wallX;
                         if (side == 1) {
@@ -171,19 +172,27 @@ public class RaycastCamera extends Camera {
 
                         wallX -= Math.floor(wallX);
 
-                        int texX = (int) (wallX * (textures.get(texNum).size));
+                        int texX = (int) (wallX * (tex.resolution));
 
                         if (side == 0 && rayDirX > 0) {
-                            texX = textures.get(texNum).size - texX - 1;
+                            texX = tex.resolution - texX - 1;
                         }
 
                         if (side == 1 && rayDirY < 0) {
-                            texX = textures.get(texNum).size - texX - 1;
+                            texX = tex.resolution - texX - 1;
                         }
 
+                        // draw the texture
                         for (int y = drawStart; y < drawEnd; y++) {
-                            int texY = (((y * 2 - GameSettings.VIEW_HEIGHT + lineHeight) << 6) / lineHeight) / 2;
-                            int color = textures.get(texNum).pixels[texX + (texY * textures.get(texNum).size)];
+                            int texY;
+
+                            if ((tex.resolution & (tex.resolution - 1)) == 0) {
+                                texY = (((y * 2 - GameSettings.VIEW_HEIGHT + lineHeight) << tex.resolutionExponent) / lineHeight) / 2;
+                            } else {
+                                texY = (((y * 2 - GameSettings.VIEW_HEIGHT + lineHeight) / tex.resolution) / lineHeight) / 2;
+                            }
+
+                            int color = tex.pixels[texX + (texY * tex.resolution)];
                             pixels[x + y * GameSettings.VIEW_WIDTH] = color;
                         }
                     }
@@ -194,14 +203,13 @@ public class RaycastCamera extends Camera {
             thread.start();
         }
 
-        for (int t = 0; t < THREADS; t++) {
+        for (int t = 0; t < numThreads; t++) {
             try {
                 threads[t].join();
             } catch (Exception ignored) { }
         }
 
         // update the view buffer
-
         renderView.setImage(image);
         pixelBuffer.updateBuffer(b -> null);
     }

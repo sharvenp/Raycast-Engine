@@ -1,5 +1,6 @@
 package app.engine.core.texture;
 
+import app.assets.GameSettings;
 import app.assets.Launcher;
 import app.engine.core.debug.Debug;
 
@@ -22,8 +23,6 @@ public class TextureLoader {
 
     public static void loadTextures() throws Exception {
 
-        System.out.println();
-
         URI textureDirPath = Launcher.class.getResource("textures/").toURI();
         textures = new ArrayList<>();
 
@@ -37,11 +36,17 @@ public class TextureLoader {
                             int h = image.getHeight();
                             if (w != h) {
                                 Debug.error("Texture is not square:", path);
+                            } else if (w != GameSettings.TEXTURE_RESOLUTION) {
+                                Debug.error("Texture does not match resolution:", path);
                             } else {
                                 Texture texture = new Texture(path.toString(), w);
                                 image.getRGB(0, 0, w, h, texture.pixels, 0, w);
                                 Debug.log("Loaded texture:", path);
                                 textures.add(texture);
+
+                                if ((w & (w - 1)) != 0) {
+                                    Debug.warn("Texture resolution is not a power of 2:", path);
+                                }
                             }
                         } catch (Exception e) {
                             Debug.error("Error loading texture: ", path, "( " + e + " ) - skipping...");

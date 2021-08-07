@@ -5,7 +5,6 @@ import app.engine.core.components.GameObject;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.renderer.Camera;
 import javafx.animation.AnimationTimer;
-import javafx.application.Platform;
 
 public class Game extends AnimationTimer {
 

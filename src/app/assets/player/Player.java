@@ -1,5 +1,6 @@
 package app.assets.player;
 
+import app.engine.core.components.Light;
 import app.engine.core.renderer.RaycastCamera;
 import app.assets.levels.Level;
 import app.engine.core.exception.NoCameraException;
@@ -11,9 +12,12 @@ import app.engine.core.math.Vector2;
 import app.engine.core.renderer.Camera;
 import javafx.scene.input.KeyCode;
 
+import java.awt.*;
+
 public class Player extends GameObject {
 
     public RaycastCamera camera;
+    public Light light;
 
     private double moveSpeed = 0.08;
     private double rotSpeed = 0.045d;
@@ -26,6 +30,8 @@ public class Player extends GameObject {
 
         tag = "PLAYER";
         layer = 0;
+
+        light = new Light(Color.WHITE, 5, 2);
     }
 
     @Override
