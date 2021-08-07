@@ -7,7 +7,8 @@ import app.engine.core.components.GameObject;
 import app.engine.core.game.Game;
 import app.engine.core.input.Input;
 import app.engine.core.renderer.Camera;
-import app.engine.core.ui.GameView;
+import app.engine.core.texture.TextureLoader;
+import app.engine.core.renderer.RenderView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -16,7 +17,10 @@ public class Launcher extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        GameView rootPane = new GameView(1280, 720);
+
+        GameSettings.initialize();
+
+        RenderView rootPane = new RenderView(GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT);
 
         primaryStage.setTitle("Some Game");
         primaryStage.setScene(new Scene(rootPane));
@@ -24,10 +28,13 @@ public class Launcher extends Application {
 
         Level map = new Level();
 
-        Camera.main = new RaycastCamera(primaryStage.getScene(), rootPane.getCanvas());
+        Camera.main = new RaycastCamera(primaryStage.getScene(), rootPane.getRenderView());
         Game.getInstance().setMap(map);
         Game.getInstance().setCamera(Camera.main);
         Input.getInstance().pollScene(primaryStage.getScene());
+
+        // Load resources
+        TextureLoader.loadTextures();
 
         // Add game objects and maps here
         Player player = new Player();

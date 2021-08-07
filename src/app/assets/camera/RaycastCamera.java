@@ -8,18 +8,24 @@ import app.engine.core.debug.Debug;
 import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
 import app.engine.core.renderer.Camera;
+import app.engine.core.texture.Texture;
+import app.engine.core.texture.TextureLoader;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.paint.Color;
+import javafx.scene.image.*;
+
+import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 public class RaycastCamera extends Camera {
 
     public double xPlane;
     public double yPlane;
 
-    public RaycastCamera(Scene gameScene, Canvas gameCanvas) {
-        super(gameScene, gameCanvas);
+    public RaycastCamera(Scene gameScene, ImageView renderView) {
+        super(gameScene, renderView);
 
+        gameScene.setCursor(Cursor.NONE);
         xPlane = 0;
         yPlane = -0.66;
     }
@@ -36,33 +42,42 @@ public class RaycastCamera extends Camera {
     }
 
     private void clearScreen() {
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, this.gameCanvas.getWidth(), this.gameCanvas.getHeight());
+        renderView.setImage(null);
     }
 
     private void renderLevel() {
-        Player player = (Player) GameObject.findObjectWithTag("PLAYER");
-        Level map = Game.getInstance().map;
-        RaycastCamera camera = (RaycastCamera) Camera.main;
 
+        Player player = (Player) GameObject.findObjectWithTag("PLAYER");
         if (player == null) {
             Debug.error("PLAYER IS NULL");
             return;
         }
 
+        ArrayList<Texture> textures = TextureLoader.getTextures();
+        if (textures == null || textures.size() == 0) {
+            return;
+        }
+
+        Level map = Game.getInstance().map;
+
+        int[] pixels = renderBuffer.array();
+        PixelBuffer<IntBuffer> pixelBuffer = new PixelBuffer<>(GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT, renderBuffer, PixelFormat.getIntArgbPreInstance());
+
         // Draw ceiling and floor
-        gc.setFill(GameSettings.CEILING_COLOR);
-        gc.fillRect(0, 0, GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT / 2d);
-        gc.setFill(GameSettings.FLOOR_COLOR);
-        gc.fillRect(0, GameSettings.VIEW_HEIGHT / 2d, GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT / 2d);
+        for (int n = 0; n < pixels.length / 2; n++) {
+            pixels[n] = GameSettings.CEILING_COLOR.getRGB();
+        }
+        for (int i = pixels.length / 2; i < pixels.length; i++) {
+            pixels[i] = GameSettings.FLOOR_COLOR.getRGB();
+        }
 
         // render raycasts
         // source: https://www.instructables.com/Making-a-Basic-3D-Engine-in-Java/
         for (int x = 0; x < GameSettings.VIEW_WIDTH; x++) {
 
             double cameraX = 2 * x / (double) (GameSettings.VIEW_WIDTH) - 1;
-            double rayDirX = player.transform.lookDirection.x + camera.xPlane * cameraX;
-            double rayDirY = player.transform.lookDirection.y + camera.yPlane * cameraX;
+            double rayDirX = player.transform.lookDirection.x + this.xPlane * cameraX;
+            double rayDirY = player.transform.lookDirection.y + this.yPlane * cameraX;
 
             int mapX = (int) player.transform.position.x;
             int mapY = (int) player.transform.position.y;
@@ -130,9 +145,36 @@ public class RaycastCamera extends Camera {
                 drawEnd = GameSettings.VIEW_HEIGHT - 1;
             }
 
-            gc.setStroke(Color.color(Mathf.clamp((double) lineHeight / GameSettings.VIEW_HEIGHT, 0, 1), 0, 0));
-            gc.strokeLine(x, drawStart, x, drawEnd);
+            int texNum = map.map[mapX][mapY];
+
+            double wallX;
+            if (side == 1) {
+                wallX = (player.transform.position.x + ((mapY - player.transform.position.y + (1d - stepY) / 2d) / rayDirY) * rayDirX);
+            } else {
+                wallX = (player.transform.position.y + ((mapX - player.transform.position.x + (1d - stepX) / 2d) / rayDirX) * rayDirY);
+            }
+
+            wallX -= Math.floor(wallX);
+
+            int texX = (int) (wallX * (textures.get(texNum).size));
+
+            if (side == 0 && rayDirX > 0) {
+                texX = textures.get(texNum).size - texX - 1;
+            }
+
+            if (side == 1 && rayDirY < 0) {
+                texX = textures.get(texNum).size - texX - 1;
+            }
+
+            for (int y = drawStart; y < drawEnd; y++) {
+                int texY = (((y * 2 - GameSettings.VIEW_HEIGHT + lineHeight) << 6) / lineHeight) / 2;
+                int color = textures.get(texNum).pixels[texX + (texY * textures.get(texNum).size)];
+                pixels[x + y * GameSettings.VIEW_WIDTH] = color;
+            }
         }
 
+        WritableImage image = new WritableImage(pixelBuffer);
+        renderView.setImage(image);
+        pixelBuffer.updateBuffer(b -> null);
     }
 }

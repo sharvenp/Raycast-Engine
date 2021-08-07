@@ -1,7 +1,8 @@
 package app.assets;
 
 import app.engine.core.game.Settings;
-import javafx.scene.paint.Color;
+
+import java.awt.*;
 
 public class GameSettings extends Settings {
 
@@ -9,16 +10,12 @@ public class GameSettings extends Settings {
     public static Color FLOOR_COLOR;
     public static Color CEILING_COLOR;
 
-    static {
+    public static void initialize() {
         VIEW_WIDTH = 1280;
         VIEW_HEIGHT = 720;
 
-        DEBUG_LOG = true;
-        DEBUG_ERROR = true;
-        DEBUG_WARN = false;
-
-        FLOOR_COLOR = Color.BLACK;
-        CEILING_COLOR = Color.GRAY;
+        FLOOR_COLOR = new Color(100, 100, 100);
+        CEILING_COLOR = new Color(	135, 206, 235);
     }
 
 }

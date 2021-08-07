@@ -12,15 +12,10 @@ public class Game extends AnimationTimer {
     public Camera camera;
     public Level map;
 
-    private Game(){
-
-    }
-
     public synchronized static Game getInstance() {
         if (instance == null) {
             instance = new Game();
         }
-
         return instance;
     }
 
