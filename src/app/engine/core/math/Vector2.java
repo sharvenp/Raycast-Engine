@@ -6,6 +6,10 @@ public class Vector2 extends Vector3 {
         super(x, y, 0);
     }
 
+    public Vector2(Vector2 other) {
+        this.set(other);
+    }
+
     public Vector2() { super(); }
 
     public static Vector2 forward() { return new Vector2(1, 0); }

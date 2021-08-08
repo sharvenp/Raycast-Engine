@@ -3,14 +3,19 @@ package app.engine.core.game;
 import app.assets.levels.Level;
 import app.engine.core.components.GameObject;
 import app.engine.core.exception.NoCameraException;
-import app.engine.core.renderer.Camera;
+import app.engine.core.exception.NoLevelException;
+import app.engine.core.renderer.camera.Camera;
+import app.engine.core.renderer.RaycastRenderer;
 import javafx.animation.AnimationTimer;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Game extends AnimationTimer {
 
     private static Game instance;
     public Camera camera;
-    public Level map;
+    public Level level;
 
     public synchronized static Game getInstance() {
         if (instance == null) {
@@ -23,17 +28,23 @@ public class Game extends AnimationTimer {
         this.camera = camera;
     }
 
-    public void setMap(Level map) { this.map = map; }
+    public void setLevel(Level level) { this.level = level; }
 
     public void initialize() throws Exception {
         if (camera == null) {
             throw new NoCameraException();
         }
 
-        camera.initializeScreen();
+        if (level == null) {
+            throw new NoLevelException();
+        }
 
-        for (GameObject gameObject : GameObject.gameObjects) {
+        Queue<GameObject> queue = new LinkedList<GameObject>(GameObject.hierarchy);
+        while (!queue.isEmpty())
+        {
+            GameObject gameObject = queue.poll();
             gameObject.start();
+            queue.addAll(gameObject.transform.children);
         }
     }
 
@@ -42,12 +53,14 @@ public class Game extends AnimationTimer {
         Time.deltaTime = currentNanoTime - Time.now;
         Time.now = currentNanoTime / 1e9;
 
-        // update all game objects
-        for (GameObject gameObject : GameObject.gameObjects) {
+        Queue<GameObject> queue = new LinkedList<GameObject>(GameObject.hierarchy);
+        while (!queue.isEmpty())
+        {
+            GameObject gameObject = queue.poll();
             gameObject.update();
+            queue.addAll(gameObject.transform.children);
         }
 
-        // update renderer
-        camera.update();
+        RaycastRenderer.render();
     }
 }

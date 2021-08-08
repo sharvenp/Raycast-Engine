@@ -11,12 +11,12 @@ public class GameSettings extends Settings {
     public static Color CEILING_COLOR;
 
     public static void initialize() {
-        VIEW_WIDTH = 1280;
-        VIEW_HEIGHT = 720;
+        VIEW_WIDTH = 640;
+        VIEW_HEIGHT = 480;
         TEXTURE_RESOLUTION = 64;
 
-        FLOOR_COLOR = new Color(100, 100, 100);
-        CEILING_COLOR = new Color(	135, 206, 235);
+        FLOOR_COLOR = new Color(73, 45, 0);
+        CEILING_COLOR = new Color(35, 35, 35);
     }
 
 }

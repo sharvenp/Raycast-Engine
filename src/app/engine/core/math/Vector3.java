@@ -12,6 +12,10 @@ public class Vector3 {
         this.z = z;
     }
 
+    public Vector3(Vector3 other) {
+        this.set(other);
+    }
+
     public Vector3() {
         this.x = 0;
         this.y = 0;

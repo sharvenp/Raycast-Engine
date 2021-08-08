@@ -2,11 +2,10 @@ package app.engine.core.renderer;
 
 import app.assets.GameSettings;
 import app.assets.levels.Level;
-import app.engine.core.components.GameObject;
-import app.assets.player.Player;
-import app.engine.core.debug.Debug;
 import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
+import app.engine.core.renderer.camera.Camera;
+import app.engine.core.renderer.camera.CameraTransform;
 import app.engine.core.texture.Texture;
 import app.engine.core.texture.TextureLoader;
 import javafx.scene.Cursor;
@@ -16,44 +15,21 @@ import javafx.scene.image.*;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 
-public class RaycastCamera extends Camera {
+public class RaycastRenderer {
 
-    public double xPlane;
-    public double yPlane;
+    private static Scene gameScene;
+    private static ImageView renderView;
 
-    public RaycastCamera(Scene gameScene, ImageView renderView) {
-        super(gameScene, renderView);
-
+    public static void initialize(Scene newGameScene, ImageView newRenderView) {
+        gameScene = newGameScene;
         gameScene.setCursor(Cursor.NONE);
-        xPlane = 0;
-        yPlane = -0.66;
+        renderView = newRenderView;
     }
 
-    @Override
-    public void initializeScreen() {
-        this.clearScreen();
-    }
+    public static void render() {
 
-    @Override
-    public void update() {
-        this.clearScreen();
-        this.renderLevel();
-    }
-
-    private void clearScreen() {
-        renderView.setImage(null);
-    }
-
-    private void renderLevel() {
-
-        Level level = Game.getInstance().map;
+        Level level = Game.getInstance().level;
         
-        Player player = (Player) GameObject.findObjectWithTag("PLAYER");
-        if (player == null) {
-            Debug.error("PLAYER IS NULL");
-            return;
-        }
-
         ArrayList<Texture> textures = TextureLoader.getTextures();
         if (textures == null || textures.size() == 0) {
             return;
@@ -74,7 +50,6 @@ public class RaycastCamera extends Camera {
         // multi-threaded raycast rendering
         int numThreads = 5;
         Thread[] threads = new Thread[numThreads];
-        RaycastCamera cam = this;
         int interval = GameSettings.VIEW_WIDTH / numThreads;
 
         for (int t = 0; t < numThreads; t++) {
@@ -89,11 +64,11 @@ public class RaycastCamera extends Camera {
                     for (int x = finalT * interval; x < (finalT + 1) * interval; x++) {
 
                         double cameraX = 2 * x / (double) (GameSettings.VIEW_WIDTH) - 1;
-                        double rayDirX = player.transform.lookDirection.x + cam.xPlane * cameraX;
-                        double rayDirY = player.transform.lookDirection.y + cam.yPlane * cameraX;
+                        double rayDirX = Camera.main.transform.lookDirection.x + ((CameraTransform)Camera.main.transform).xPlane * cameraX;
+                        double rayDirY = Camera.main.transform.lookDirection.y + ((CameraTransform)Camera.main.transform).yPlane * cameraX;
 
-                        int mapX = (int) player.transform.position.x;
-                        int mapY = (int) player.transform.position.y;
+                        int mapX = (int) Camera.main.transform.position.x;
+                        int mapY = (int) Camera.main.transform.position.y;
 
                         double sideDistX;
                         double sideDistY;
@@ -108,17 +83,17 @@ public class RaycastCamera extends Camera {
 
                         if (rayDirX < 0) {
                             stepX = -1;
-                            sideDistX = (player.transform.position.x - mapX) * deltaDistX;
+                            sideDistX = (Camera.main.transform.position.x - mapX) * deltaDistX;
                         } else {
                             stepX = 1;
-                            sideDistX = (mapX + 1.0 - player.transform.position.x) * deltaDistX;
+                            sideDistX = (mapX + 1.0 - Camera.main.transform.position.x) * deltaDistX;
                         }
                         if (rayDirY < 0) {
                             stepY = -1;
-                            sideDistY = (player.transform.position.y - mapY) * deltaDistY;
+                            sideDistY = (Camera.main.transform.position.y - mapY) * deltaDistY;
                         } else {
                             stepY = 1;
-                            sideDistY = (mapY + 1.0 - player.transform.position.y) * deltaDistY;
+                            sideDistY = (mapY + 1.0 - Camera.main.transform.position.y) * deltaDistY;
                         }
 
                         while (!hit) {
@@ -138,9 +113,9 @@ public class RaycastCamera extends Camera {
                         }
 
                         if (side == 0) {
-                            perpWallDist = Mathf.abs((mapX - player.transform.position.x + (1d - stepX) / 2d) / rayDirX);
+                            perpWallDist = Mathf.abs((mapX - Camera.main.transform.position.x + (1d - stepX) / 2d) / rayDirX);
                         } else {
-                            perpWallDist = Mathf.abs((mapY - player.transform.position.y + (1d - stepY) / 2d) / rayDirY);
+                            perpWallDist = Mathf.abs((mapY - Camera.main.transform.position.y + (1d - stepY) / 2d) / rayDirY);
                         }
 
                         int lineHeight;
@@ -165,9 +140,9 @@ public class RaycastCamera extends Camera {
 
                         double wallX;
                         if (side == 1) {
-                            wallX = (player.transform.position.x + ((mapY - player.transform.position.y + (1d - stepY) / 2d) / rayDirY) * rayDirX);
+                            wallX = (Camera.main.transform.position.x + ((mapY - Camera.main.transform.position.y + (1d - stepY) / 2d) / rayDirY) * rayDirX);
                         } else {
-                            wallX = (player.transform.position.y + ((mapX - player.transform.position.x + (1d - stepX) / 2d) / rayDirX) * rayDirY);
+                            wallX = (Camera.main.transform.position.y + ((mapX - Camera.main.transform.position.x + (1d - stepX) / 2d) / rayDirX) * rayDirY);
                         }
 
                         wallX -= Math.floor(wallX);

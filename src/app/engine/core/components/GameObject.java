@@ -1,38 +1,46 @@
 package app.engine.core.components;
 
-import app.engine.core.exception.NoCameraException;
-
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public abstract class GameObject {
 
-    public static ArrayList<GameObject> gameObjects;
+    public static ArrayList<GameObject> hierarchy;
 
-    static {
-        gameObjects = new ArrayList<>();
-    }
-
-    public static GameObject findObjectWithTag(String tag) {
-        GameObject obj = null;
-        for (GameObject gameObject : gameObjects) {
-            if (gameObject.tag.equals(tag)) {
-                obj = gameObject;
-            }
-        }
-        return obj;
-    }
-
-    public Transform transform;
-    public String tag;
-    public int layer;
-
-    public GameObject() {
-        this.tag = "";
-        this.layer = -1;
-        this.transform = new Transform();
-    }
+    public Transform transform = new Transform();
+    public String tag = "";
 
     public abstract void start() throws Exception;
 
     public abstract void update();
+
+    public static GameObject findObjectWithTag(String tag) {
+        Queue<GameObject> queue = new LinkedList<GameObject>(hierarchy);
+        while (!queue.isEmpty())
+        {
+            GameObject gameObject = queue.poll();
+            if (gameObject.tag.equals(tag)) {
+                return gameObject;
+            }
+            queue.addAll(gameObject.transform.children);
+        }
+
+        return null;
+    }
+
+    public GameObject findChildObjectWithTag(String tag) {
+        Queue<GameObject> queue = new LinkedList<GameObject>(transform.children);
+        while (!queue.isEmpty())
+        {
+            GameObject gameObject = queue.poll();
+            if (gameObject.tag.equals(tag)) {
+                return gameObject;
+            }
+            queue.addAll(gameObject.transform.children);
+        }
+
+        return null;
+    }
+
 }
