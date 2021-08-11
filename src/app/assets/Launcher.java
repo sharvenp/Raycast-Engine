@@ -1,10 +1,11 @@
 package app.assets;
 
+import app.assets.scripts.PlayerBehaviour;
 import app.engine.core.components.Light;
 import app.engine.core.math.Vector2;
 import app.engine.core.renderer.RaycastRenderer;
 import app.assets.levels.Level0;
-import app.assets.player.Player;
+import app.assets.gameobjects.Player;
 import app.engine.core.components.GameObject;
 import app.engine.core.game.Game;
 import app.engine.core.input.Input;
@@ -33,9 +34,7 @@ public class Launcher extends Application {
 
         // Create camera
         Camera.main = new Camera();
-        Camera.main.light = new Light(new Color(50, 50, 50), 0.5, 1, 0);
-        Camera.main.light.radius = 1;
-        Camera.main.light.intensity = 1;
+        Camera.main.addBehaviours(new Light(new Color(53, 44, 20), 1, 1));
 
         // set up engine stuff
         RaycastRenderer.initialize(primaryStage.getScene(), rootPane.getRenderView());
@@ -50,6 +49,11 @@ public class Launcher extends Application {
         // for now, manually create it
 
         Player player = new Player();
+        player.addBehaviours(new PlayerBehaviour());
+        player.transform.position.set(new Vector2(4.5, 4.5));
+        player.transform.lookDirection.set(new Vector2(1, 0));
+        Camera.main.transform.position.set(new Vector2(4.5, 4.5));
+        Camera.main.transform.lookDirection.set(new Vector2(1, 0));
         player.transform.children.add(Camera.main);
 
         GameObject.hierarchy = new ArrayList<>();

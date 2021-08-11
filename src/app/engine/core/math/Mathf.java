@@ -16,6 +16,10 @@ public class Mathf {
         return Math.sin(rad);
     }
 
+    public static Vector3 lerp(Vector3 a, Vector3 b, double t) {
+        return a.scale(t).add(b.scale(1 - t));
+    }
+
     public static double abs(double val) { return Math.abs(val); }
 
     public static double sqrt(double val) { return Math.sqrt(val); }

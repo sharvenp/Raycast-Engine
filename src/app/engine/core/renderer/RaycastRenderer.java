@@ -7,13 +7,13 @@ import app.engine.core.debug.Debug;
 import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
 import app.engine.core.math.Vector2;
+import app.engine.core.math.Vector3;
 import app.engine.core.texture.Texture;
 import app.engine.core.texture.TextureLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.image.*;
 
-import java.awt.*;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 
@@ -31,11 +31,13 @@ public class RaycastRenderer {
     public static void render() {
 
         Level0 level = Game.getInstance().level;
-        
+
         ArrayList<Texture> textures = TextureLoader.getTextures();
         if (textures == null || textures.size() == 0) {
             return;
         }
+
+        Light light = (Light) Camera.main.findBehaviour(Light.class.toString());
 
         // start the rendering
         IntBuffer renderBuffer = IntBuffer.allocate(GameSettings.VIEW_WIDTH * GameSettings.VIEW_HEIGHT);
@@ -85,24 +87,14 @@ public class RaycastRenderer {
                 distance = 1 / distance;
 
                 int color = floorTex.pixels[floorTex.resolution * ty + tx];
-                if (GameSettings.LIGHT_ENABLED && Camera.main.light != null) {
-                    double scale = Camera.main.light.intensity * Mathf.clamp(Camera.main.light.radius / (distance > 0 ? distance : 1), 0, 1);
-                    double r = Mathf.clamp((double)((color >> 16) & 0xFF) * scale, 0, 255);
-                    double g = Mathf.clamp((double)((color >> 8) & 0xFF) * scale, 0, 255);
-                    double b = Mathf.clamp((double)(color & 0xFF) * scale, 0, 255);
-                    int rgb = 0xFF;
-                    rgb = (rgb << 8) + (int) r;
-                    rgb = (rgb << 8) + (int) g;
-                    rgb = (rgb << 8) + (int) b;
-                    color = rgb;
+                if (GameSettings.LIGHT_ENABLED && light != null) {
+                    double scale = Mathf.clamp(light.radius / (distance > 0 ? distance : 1), 0, 1);
+                    color = calculateLightPixelColor(light, color, scale);
                 }
-
                 pixels[x + y * GameSettings.VIEW_WIDTH] = color;
                 pixels[x + (GameSettings.VIEW_HEIGHT - y - 1) * GameSettings.VIEW_WIDTH] = GameSettings.CEILING_COLOR.getRGB();
             }
         }
-
-        ArrayList<Light> lights = GameObject.findObjectsWithType(DefaultComponentType.LIGHT.getType());
 
         // multi-threaded raycast rendering
         int numThreads = 5;
@@ -226,23 +218,10 @@ public class RaycastRenderer {
 
                             int color = tex.pixels[texX + (texY * tex.resolution)];
 
-                            if (GameSettings.LIGHT_ENABLED && Camera.main.light != null) {
-                                double scale = Camera.main.light.intensity * Mathf.clamp(Camera.main.light.radius / (perpWallDist > 0 ? perpWallDist : 1), 0, 1);
-                                double r = Mathf.clamp((double)((color >> 16) & 0xFF) * scale, 0, 255);
-                                double g = Mathf.clamp((double)((color >> 8) & 0xFF) * scale, 0, 255);
-                                double b = Mathf.clamp((double)(color & 0xFF) * scale, 0, 255);
-                                int rgb = 0xFF;
-                                rgb = (rgb << 8) + (int) r;
-                                rgb = (rgb << 8) + (int) g;
-                                rgb = (rgb << 8) + (int) b;
-                                color = rgb;
+                            if (GameSettings.LIGHT_ENABLED && light != null) {
+                                double scale = Mathf.clamp(light.radius / (perpWallDist > 0 ? perpWallDist : 1), 0, 1);
+                                color = calculateLightPixelColor(light, color, scale);
                             }
-
-                            // make side walls a little darker
-                            //if(side!=0) {
-                            //    color = color & 0xFFF0F0F0;
-                            //}
-
                             pixels[x  + y * GameSettings.VIEW_WIDTH] = (int) color;
                         }
                     }
@@ -263,4 +242,16 @@ public class RaycastRenderer {
         renderView.setImage(image);
         pixelBuffer.updateBuffer(b -> null);
     }
+
+    private static int calculateLightPixelColor(Light light, int pixelColor, double scale) {
+        Vector3 color2 = new Vector3((pixelColor >> 16) & 0xFF, (pixelColor >> 8) & 0xFF, pixelColor & 0xFF);
+        Vector3 color1 = new Vector3((light.color.getRed() + color2.x) / 2, (light.color.getGreen() + color2.y) / 2, (light.color.getBlue() + color2.z) / 2);
+        Vector3 lerpedColor = Mathf.lerp(color1, color2, scale).scale(scale);
+        int rgb = 0xFF;
+        rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.x, 0, 255);
+        rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.y, 0, 255);
+        rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.z, 0, 255);
+        return rgb;
+    }
+
 }

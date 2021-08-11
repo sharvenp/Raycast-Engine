@@ -1,6 +1,7 @@
 package app.engine.core.game;
 
 import app.assets.levels.Level0;
+import app.engine.core.components.Behaviour;
 import app.engine.core.components.GameObject;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.exception.NoLevelException;
@@ -43,7 +44,9 @@ public class Game extends AnimationTimer {
         while (!queue.isEmpty())
         {
             GameObject gameObject = queue.poll();
-            gameObject.start();
+            for (Behaviour behaviour : gameObject.behaviours) {
+                behaviour.start();
+            }
             queue.addAll(gameObject.transform.children);
         }
     }
@@ -58,7 +61,9 @@ public class Game extends AnimationTimer {
         while (!queue.isEmpty())
         {
             GameObject gameObject = queue.poll();
-            gameObject.update();
+            for (Behaviour behaviour : gameObject.behaviours) {
+                behaviour.update();
+            }
             queue.addAll(gameObject.transform.children);
         }
 
