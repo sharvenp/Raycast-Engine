@@ -1,14 +1,14 @@
-package app.engine.core.renderer.camera;
-
-import app.engine.core.components.GameObject;
+package app.engine.core.components;
 
 public class Camera extends GameObject {
 
     public static Camera main;
 
+    public Light light;
+
     public Camera() {
         super();
-        tag = "CAMERA";
+        type = DefaultComponentType.CAMERA.getType();
         transform = new CameraTransform();
     }
 

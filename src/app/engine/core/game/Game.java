@@ -1,10 +1,10 @@
 package app.engine.core.game;
 
-import app.assets.levels.Level;
+import app.assets.levels.Level0;
 import app.engine.core.components.GameObject;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.exception.NoLevelException;
-import app.engine.core.renderer.camera.Camera;
+import app.engine.core.components.Camera;
 import app.engine.core.renderer.RaycastRenderer;
 import javafx.animation.AnimationTimer;
 
@@ -15,7 +15,7 @@ public class Game extends AnimationTimer {
 
     private static Game instance;
     public Camera camera;
-    public Level level;
+    public Level0 level;
 
     public synchronized static Game getInstance() {
         if (instance == null) {
@@ -28,7 +28,7 @@ public class Game extends AnimationTimer {
         this.camera = camera;
     }
 
-    public void setLevel(Level level) { this.level = level; }
+    public void setLevel(Level0 level) { this.level = level; }
 
     public void initialize() throws Exception {
         if (camera == null) {
@@ -50,8 +50,9 @@ public class Game extends AnimationTimer {
 
     @Override
     public void handle(long currentNanoTime) {
-        Time.deltaTime = currentNanoTime - Time.now;
-        Time.now = currentNanoTime / 1e9;
+        double currentMSTime = currentNanoTime / 1e9;
+        Time.deltaTime = currentMSTime - Time.now;
+        Time.now = currentMSTime;
 
         Queue<GameObject> queue = new LinkedList<GameObject>(GameObject.hierarchy);
         while (!queue.isEmpty())

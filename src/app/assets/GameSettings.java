@@ -7,7 +7,6 @@ import java.awt.*;
 public class GameSettings extends Settings {
 
     // color palette
-    public static Color FLOOR_COLOR;
     public static Color CEILING_COLOR;
 
     public static void initialize() {
@@ -15,7 +14,8 @@ public class GameSettings extends Settings {
         VIEW_HEIGHT = 480;
         TEXTURE_RESOLUTION = 64;
 
-        FLOOR_COLOR = new Color(73, 45, 0);
+        LIGHT_ENABLED = true;
+
         CEILING_COLOR = new Color(35, 35, 35);
     }
 

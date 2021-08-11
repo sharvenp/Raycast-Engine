@@ -64,7 +64,7 @@ public class Vector3 {
     }
 
     public double magnitude() {
-        return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z));
+        return Math.sqrt(this.squareMagnitude());
     }
 
     public double squareMagnitude() {
@@ -75,6 +75,10 @@ public class Vector3 {
         return Math.sqrt((this.x - to.x) * (this.x - to.x) +
                          (this.y - to.y) * (this.y - to.y) +
                          (this.z - to.z) * (this.z - to.z));
+    }
+
+    public double squareDistance(Vector3 to) {
+        return (this.x - to.x) * (this.x - to.x) + (this.y - to.y) * (this.y - to.y) + (this.z - to.z) * (this.z - to.z);
     }
 
     public Vector3 normalize() {

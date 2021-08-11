@@ -1,17 +1,19 @@
 package app.engine.core.renderer;
 
 import app.assets.GameSettings;
-import app.assets.levels.Level;
+import app.assets.levels.*;
+import app.engine.core.components.*;
+import app.engine.core.debug.Debug;
 import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
-import app.engine.core.renderer.camera.Camera;
-import app.engine.core.renderer.camera.CameraTransform;
+import app.engine.core.math.Vector2;
 import app.engine.core.texture.Texture;
 import app.engine.core.texture.TextureLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.image.*;
 
+import java.awt.*;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 
@@ -28,7 +30,7 @@ public class RaycastRenderer {
 
     public static void render() {
 
-        Level level = Game.getInstance().level;
+        Level0 level = Game.getInstance().level;
         
         ArrayList<Texture> textures = TextureLoader.getTextures();
         if (textures == null || textures.size() == 0) {
@@ -42,10 +44,65 @@ public class RaycastRenderer {
         WritableImage image = new WritableImage(pixelBuffer);
 
         // Draw ceiling and floor
-        for (int i = 0; i < pixels.length / 2; i++) {
-            pixels[i] = GameSettings.CEILING_COLOR.getRGB();
-            pixels[i + pixels.length / 2] = GameSettings.FLOOR_COLOR.getRGB();
+        //FLOOR CASTING
+        Texture floorTex = textures.get(0);
+        for(int y = GameSettings.VIEW_HEIGHT / 2; y < GameSettings.VIEW_HEIGHT; y++)
+        {
+            double rayDirX0 = Camera.main.transform.lookDirection.x - ((CameraTransform)Camera.main.transform).xPlane;
+            double rayDirY0 = Camera.main.transform.lookDirection.y - ((CameraTransform)Camera.main.transform).yPlane;
+            double rayDirX1 = Camera.main.transform.lookDirection.x + ((CameraTransform)Camera.main.transform).xPlane;
+            double rayDirY1 = Camera.main.transform.lookDirection.y + ((CameraTransform)Camera.main.transform).yPlane;
+
+            int p = y - GameSettings.VIEW_HEIGHT / 2;
+            double posZ = 0.5 * GameSettings.VIEW_HEIGHT;
+            double rowDistance = posZ / p;
+
+            double floorStepX = rowDistance * (rayDirX1 - rayDirX0) / GameSettings.VIEW_WIDTH;
+            double floorStepY = rowDistance * (rayDirY1 - rayDirY0) / GameSettings.VIEW_WIDTH;
+
+            double floorX = Camera.main.transform.position.x + rowDistance * rayDirX0;
+            double floorY = Camera.main.transform.position.y + rowDistance * rayDirY0;
+
+            for(int x = 0; x < GameSettings.VIEW_WIDTH; ++x)
+            {
+                int cellX = (int)(floorX);
+                int cellY = (int)(floorY);
+
+                // get the texture coordinate from the fractional part
+                int tx = (int)(floorTex.resolution * (floorX - cellX)) & (floorTex.resolution - 1);
+                int ty = (int)(floorTex.resolution * (floorY - cellY)) & (floorTex.resolution - 1);
+
+                floorX += floorStepX;
+                floorY += floorStepY;
+
+                // FAST INVERSE SQUARE
+                double distance = (new Vector2(floorX, floorY)).squareDistance(Camera.main.transform.position);
+                double xhalf = 0.5d * distance;
+                long i = Double.doubleToLongBits(distance);
+                i = 0x5fe6ec85e7de30daL - (i >> 1);
+                distance = Double.longBitsToDouble(i);
+                distance *= (1.5d - xhalf * distance * distance);
+                distance = 1 / distance;
+
+                int color = floorTex.pixels[floorTex.resolution * ty + tx];
+                if (GameSettings.LIGHT_ENABLED && Camera.main.light != null) {
+                    double scale = Camera.main.light.intensity * Mathf.clamp(Camera.main.light.radius / (distance > 0 ? distance : 1), 0, 1);
+                    double r = Mathf.clamp((double)((color >> 16) & 0xFF) * scale, 0, 255);
+                    double g = Mathf.clamp((double)((color >> 8) & 0xFF) * scale, 0, 255);
+                    double b = Mathf.clamp((double)(color & 0xFF) * scale, 0, 255);
+                    int rgb = 0xFF;
+                    rgb = (rgb << 8) + (int) r;
+                    rgb = (rgb << 8) + (int) g;
+                    rgb = (rgb << 8) + (int) b;
+                    color = rgb;
+                }
+
+                pixels[x + y * GameSettings.VIEW_WIDTH] = color;
+                pixels[x + (GameSettings.VIEW_HEIGHT - y - 1) * GameSettings.VIEW_WIDTH] = GameSettings.CEILING_COLOR.getRGB();
+            }
         }
+
+        ArrayList<Light> lights = GameObject.findObjectsWithType(DefaultComponentType.LIGHT.getType());
 
         // multi-threaded raycast rendering
         int numThreads = 5;
@@ -168,7 +225,25 @@ public class RaycastRenderer {
                             }
 
                             int color = tex.pixels[texX + (texY * tex.resolution)];
-                            pixels[x + y * GameSettings.VIEW_WIDTH] = color;
+
+                            if (GameSettings.LIGHT_ENABLED && Camera.main.light != null) {
+                                double scale = Camera.main.light.intensity * Mathf.clamp(Camera.main.light.radius / (perpWallDist > 0 ? perpWallDist : 1), 0, 1);
+                                double r = Mathf.clamp((double)((color >> 16) & 0xFF) * scale, 0, 255);
+                                double g = Mathf.clamp((double)((color >> 8) & 0xFF) * scale, 0, 255);
+                                double b = Mathf.clamp((double)(color & 0xFF) * scale, 0, 255);
+                                int rgb = 0xFF;
+                                rgb = (rgb << 8) + (int) r;
+                                rgb = (rgb << 8) + (int) g;
+                                rgb = (rgb << 8) + (int) b;
+                                color = rgb;
+                            }
+
+                            // make side walls a little darker
+                            //if(side!=0) {
+                            //    color = color & 0xFFF0F0F0;
+                            //}
+
+                            pixels[x  + y * GameSettings.VIEW_WIDTH] = (int) color;
                         }
                     }
                 }

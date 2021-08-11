@@ -1,4 +1,4 @@
-package app.engine.core.renderer.camera;
+package app.engine.core.components;
 
 import app.engine.core.components.Transform;
 import app.engine.core.math.Mathf;
