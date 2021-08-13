@@ -1,7 +1,8 @@
 package app.assets;
 
-import app.assets.scripts.PlayerBehaviour;
+import app.assets.scripts.PlayerMovement;
 import app.engine.core.components.Light;
+import app.engine.core.debug.DebugPane;
 import app.engine.core.math.Vector2;
 import app.engine.core.renderer.RaycastRenderer;
 import app.assets.levels.Level0;
@@ -14,6 +15,8 @@ import app.engine.core.texture.TextureLoader;
 import app.engine.core.renderer.RenderView;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
 import java.awt.*;
@@ -49,7 +52,7 @@ public class Launcher extends Application {
         // for now, manually create it
 
         Player player = new Player();
-        player.addBehaviours(new PlayerBehaviour());
+        player.addBehaviours(new PlayerMovement());
         player.transform.position.set(new Vector2(4.5, 4.5));
         player.transform.lookDirection.set(new Vector2(1, 0));
         Camera.main.transform.position.set(new Vector2(4.5, 4.5));
@@ -65,6 +68,12 @@ public class Launcher extends Application {
         Game.getInstance().initialize();
         Game.getInstance().start();
         primaryStage.show();
+
+        if (GameSettings.DEBUG_MODE) {
+            primaryStage.setOnCloseRequest(windowEvent -> {
+                DebugPane.debugStage.close();
+            });
+        }
     }
 
     public static void main(String[] args) {

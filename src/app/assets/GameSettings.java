@@ -1,22 +1,15 @@
 package app.assets;
 
-import app.engine.core.game.Settings;
+import app.engine.core.game.DefaultSettings;
 
-import java.awt.*;
-
-public class GameSettings extends Settings {
-
-    // color palette
-    public static Color CEILING_COLOR;
+public class GameSettings extends DefaultSettings {
 
     public static void initialize() {
-        VIEW_WIDTH = 640;
-        VIEW_HEIGHT = 480;
+        DefaultSettings.initialize();
+
+        DEBUG_MODE = true;
         TEXTURE_RESOLUTION = 64;
-
-        LIGHT_ENABLED = true;
-
-        CEILING_COLOR = new Color(35, 35, 35);
+        ENABLE_LIGHT = true;
     }
 
 }

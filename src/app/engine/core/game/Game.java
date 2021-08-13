@@ -1,13 +1,16 @@
 package app.engine.core.game;
 
+import app.assets.GameSettings;
 import app.assets.levels.Level0;
 import app.engine.core.components.Behaviour;
 import app.engine.core.components.GameObject;
+import app.engine.core.debug.DebugPane;
 import app.engine.core.exception.NoCameraException;
 import app.engine.core.exception.NoLevelException;
 import app.engine.core.components.Camera;
 import app.engine.core.renderer.RaycastRenderer;
 import javafx.animation.AnimationTimer;
+import javafx.scene.paint.Color;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -57,6 +60,16 @@ public class Game extends AnimationTimer {
         Time.deltaTime = currentMSTime - Time.now;
         Time.now = currentMSTime;
 
+        if (GameSettings.DEBUG_MODE) {
+            double fps = 1.0 / Time.deltaTime;
+            DebugPane.fpsLabel.setText(String.format("FPS: %.2f MS: %.2fms", fps, Time.deltaTime * 1000));
+            if (fps < 30) {
+                DebugPane.fpsLabel.setTextFill(Color.RED);
+            } else {
+                DebugPane.fpsLabel.setTextFill(Color.GREEN);
+            }
+        }
+
         Queue<GameObject> queue = new LinkedList<GameObject>(GameObject.hierarchy);
         while (!queue.isEmpty())
         {
@@ -68,5 +81,6 @@ public class Game extends AnimationTimer {
         }
 
         RaycastRenderer.render();
+
     }
 }

@@ -3,7 +3,6 @@ package app.engine.core.renderer;
 import app.assets.GameSettings;
 import app.assets.levels.*;
 import app.engine.core.components.*;
-import app.engine.core.debug.Debug;
 import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
 import app.engine.core.math.Vector2;
@@ -46,14 +45,13 @@ public class RaycastRenderer {
         WritableImage image = new WritableImage(pixelBuffer);
 
         // Draw ceiling and floor
-        //FLOOR CASTING
-        Texture floorTex = textures.get(0);
-        for(int y = GameSettings.VIEW_HEIGHT / 2; y < GameSettings.VIEW_HEIGHT; y++)
-        {
-            double rayDirX0 = Camera.main.transform.lookDirection.x - ((CameraTransform)Camera.main.transform).xPlane;
-            double rayDirY0 = Camera.main.transform.lookDirection.y - ((CameraTransform)Camera.main.transform).yPlane;
-            double rayDirX1 = Camera.main.transform.lookDirection.x + ((CameraTransform)Camera.main.transform).xPlane;
-            double rayDirY1 = Camera.main.transform.lookDirection.y + ((CameraTransform)Camera.main.transform).yPlane;
+        Texture floorTex = GameSettings.FLOOR_TEXTURE;
+        Texture ceilTex = GameSettings.CEIL_TEXTURE;
+        for (int y = GameSettings.VIEW_HEIGHT / 2; y < GameSettings.VIEW_HEIGHT; y++) {
+            double rayDirX0 = Camera.main.transform.lookDirection.x - ((CameraTransform) Camera.main.transform).xPlane;
+            double rayDirY0 = Camera.main.transform.lookDirection.y - ((CameraTransform) Camera.main.transform).yPlane;
+            double rayDirX1 = Camera.main.transform.lookDirection.x + ((CameraTransform) Camera.main.transform).xPlane;
+            double rayDirY1 = Camera.main.transform.lookDirection.y + ((CameraTransform) Camera.main.transform).yPlane;
 
             int p = y - GameSettings.VIEW_HEIGHT / 2;
             double posZ = 0.5 * GameSettings.VIEW_HEIGHT;
@@ -65,14 +63,25 @@ public class RaycastRenderer {
             double floorX = Camera.main.transform.position.x + rowDistance * rayDirX0;
             double floorY = Camera.main.transform.position.y + rowDistance * rayDirY0;
 
-            for(int x = 0; x < GameSettings.VIEW_WIDTH; ++x)
-            {
-                int cellX = (int)(floorX);
-                int cellY = (int)(floorY);
+            for (int x = 0; x < GameSettings.VIEW_WIDTH; ++x) {
+                int cellX = (int) (floorX);
+                int cellY = (int) (floorY);
 
                 // get the texture coordinate from the fractional part
-                int tx = (int)(floorTex.resolution * (floorX - cellX)) & (floorTex.resolution - 1);
-                int ty = (int)(floorTex.resolution * (floorY - cellY)) & (floorTex.resolution - 1);
+                int floorColor = GameSettings.DEFAULT_FLOOR_COLOR.getRGB();
+                int ceilColor = GameSettings.DEFAULT_CEILING_COLOR.getRGB();
+
+                if (floorTex != null) {
+                    int tx = (int) (floorTex.resolution * (floorX - cellX)) & (floorTex.resolution - 1);
+                    int ty = (int) (floorTex.resolution * (floorY - cellY)) & (floorTex.resolution - 1);
+                    floorColor = floorTex.pixels[floorTex.resolution * ty + tx];
+                }
+
+                if (ceilTex != null) {
+                    int tx = (int) (ceilTex.resolution * (floorX - cellX)) & (ceilTex.resolution - 1);
+                    int ty = (int) (ceilTex.resolution * (floorY - cellY)) & (ceilTex.resolution - 1);
+                    ceilColor = ceilTex.pixels[ceilTex.resolution * ty + tx];
+                }
 
                 floorX += floorStepX;
                 floorY += floorStepY;
@@ -86,13 +95,13 @@ public class RaycastRenderer {
                 distance *= (1.5d - xhalf * distance * distance);
                 distance = 1 / distance;
 
-                int color = floorTex.pixels[floorTex.resolution * ty + tx];
-                if (GameSettings.LIGHT_ENABLED && light != null) {
+                if (GameSettings.ENABLE_LIGHT && light != null) {
                     double scale = Mathf.clamp(light.radius / (distance > 0 ? distance : 1), 0, 1);
-                    color = calculateLightPixelColor(light, color, scale);
+                    floorColor = calculateLightPixelColor(light, floorColor, scale);
+                    ceilColor = calculateLightPixelColor(light, ceilColor, scale);
                 }
-                pixels[x + y * GameSettings.VIEW_WIDTH] = color;
-                pixels[x + (GameSettings.VIEW_HEIGHT - y - 1) * GameSettings.VIEW_WIDTH] = GameSettings.CEILING_COLOR.getRGB();
+                pixels[x + y * GameSettings.VIEW_WIDTH] = floorColor;
+                pixels[x + (GameSettings.VIEW_HEIGHT - y - 1) * GameSettings.VIEW_WIDTH] = ceilColor;
             }
         }
 
@@ -218,7 +227,7 @@ public class RaycastRenderer {
 
                             int color = tex.pixels[texX + (texY * tex.resolution)];
 
-                            if (GameSettings.LIGHT_ENABLED && light != null) {
+                            if (GameSettings.ENABLE_LIGHT && light != null) {
                                 double scale = Mathf.clamp(light.radius / (perpWallDist > 0 ? perpWallDist : 1), 0, 1);
                                 color = calculateLightPixelColor(light, color, scale);
                             }

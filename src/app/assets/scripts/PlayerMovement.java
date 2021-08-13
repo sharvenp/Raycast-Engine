@@ -4,9 +4,9 @@ import app.engine.core.components.Behaviour;
 import app.engine.core.input.Input;
 import javafx.scene.input.KeyCode;
 
-public class PlayerBehaviour extends Behaviour {
+public class PlayerMovement extends Behaviour {
 
-    private final double moveSpeed = 0.1;
+    private final double moveSpeed = 0.04;
     private final double rotSpeed = 0.045d;
 
     @Override

@@ -9,17 +9,17 @@ import java.util.Set;
 public class Input {
 
     private static Scene scene;
-    private static Input instace;
+    private static Input instance;
     private static final Set<KeyCode> keysCurrentlyDown = new HashSet<>();
 
     private Input() {
     }
 
     public synchronized static Input getInstance() {
-        if (instace == null) {
-            instace = new Input();
+        if (instance == null) {
+            instance = new Input();
         }
-        return instace;
+        return instance;
     }
 
     public void pollScene(Scene scene) {

@@ -3,6 +3,7 @@ package app.engine.core.texture;
 import app.assets.GameSettings;
 import app.assets.Launcher;
 import app.engine.core.debug.Debug;
+import app.engine.core.game.Game;
 
 import java.awt.image.BufferedImage;
 import java.net.URI;
@@ -25,6 +26,7 @@ public class TextureLoader {
 
         URI textureDirPath = Launcher.class.getResource("textures/").toURI();
         textures = new ArrayList<>();
+        textures.add(null); // pad 0-index
 
         try (Stream<Path> paths = Files.walk(Paths.get(textureDirPath))) {
             paths
@@ -41,9 +43,16 @@ public class TextureLoader {
                             } else {
                                 Texture texture = new Texture(path.toString(), w);
                                 image.getRGB(0, 0, w, h, texture.pixels, 0, w);
+                                if (path.toFile().getName().contains("floor")) {
+                                    // floor texture
+                                    GameSettings.FLOOR_TEXTURE = texture;
+                                } else if (path.toFile().getName().contains("ceiling")) {
+                                    // ceiling texture
+                                    GameSettings.CEIL_TEXTURE = texture;
+                                } else {
+                                    textures.add(texture);
+                                }
                                 Debug.log("Loaded texture:", path);
-                                textures.add(texture);
-
                                 if ((w & (w - 1)) != 0) {
                                     Debug.warn("Texture resolution is not a power of 2:", path);
                                 }
