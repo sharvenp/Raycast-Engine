@@ -15,8 +15,6 @@ import app.engine.core.texture.TextureLoader;
 import app.engine.core.renderer.RenderView;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
 import java.awt.*;

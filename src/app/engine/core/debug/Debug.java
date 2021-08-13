@@ -45,7 +45,7 @@ public class Debug {
             s.append(o.toString()).append(" ");
         }
         System.out.println(s);
-        updateDebugText(s.toString(), 1);
+        updateDebugText(s.toString(), 0);
     }
 
     public static void warn (Object ...args) {
