@@ -3,6 +3,7 @@ package app.engine.core.game;
 import app.assets.GameSettings;
 import app.assets.levels.Level0;
 import app.engine.core.components.Behaviour;
+import app.engine.core.components.Component;
 import app.engine.core.components.GameObject;
 import app.engine.core.debug.DebugPane;
 import app.engine.core.exception.NoCameraException;
@@ -47,8 +48,10 @@ public class Game extends AnimationTimer {
         while (!queue.isEmpty())
         {
             GameObject gameObject = queue.poll();
-            for (Behaviour behaviour : gameObject.behaviours) {
-                behaviour.start();
+            for (Component behaviour : gameObject.components) {
+                if (behaviour instanceof Behaviour) {
+                    ((Behaviour)behaviour).start();
+                }
             }
             queue.addAll(gameObject.transform.children);
         }
@@ -63,7 +66,7 @@ public class Game extends AnimationTimer {
         if (GameSettings.DEBUG_MODE) {
             double fps = 1.0 / Time.deltaTime;
             DebugPane.fpsLabel.setText(String.format("FPS: %.2f MS: %.2fms", fps, Time.deltaTime * 1000));
-            if (fps < 30) {
+            if (fps < 60) {
                 DebugPane.fpsLabel.setTextFill(Color.RED);
             } else {
                 DebugPane.fpsLabel.setTextFill(Color.GREEN);
@@ -74,8 +77,10 @@ public class Game extends AnimationTimer {
         while (!queue.isEmpty())
         {
             GameObject gameObject = queue.poll();
-            for (Behaviour behaviour : gameObject.behaviours) {
-                behaviour.update();
+            for (Component behaviour : gameObject.components) {
+                if (behaviour instanceof Behaviour) {
+                    ((Behaviour)behaviour).update();
+                }
             }
             queue.addAll(gameObject.transform.children);
         }

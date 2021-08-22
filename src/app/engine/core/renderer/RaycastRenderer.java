@@ -7,6 +7,9 @@ import app.engine.core.game.Game;
 import app.engine.core.math.Mathf;
 import app.engine.core.math.Vector2;
 import app.engine.core.math.Vector3;
+import app.engine.core.components.SpriteRenderer;
+import app.engine.core.sprite.Direction;
+import app.engine.core.sprite.Sprite;
 import app.engine.core.texture.Texture;
 import app.engine.core.texture.TextureLoader;
 import javafx.scene.Cursor;
@@ -36,13 +39,14 @@ public class RaycastRenderer {
             return;
         }
 
-        Light light = (Light) Camera.main.findBehaviour(Light.class.toString());
+        Light light = Camera.main.<Light>getComponent(Light.class);
 
         // start the rendering
         IntBuffer renderBuffer = IntBuffer.allocate(GameSettings.VIEW_WIDTH * GameSettings.VIEW_HEIGHT);
         int[] pixels = renderBuffer.array();
         PixelBuffer<IntBuffer> pixelBuffer = new PixelBuffer<>(GameSettings.VIEW_WIDTH, GameSettings.VIEW_HEIGHT, renderBuffer, PixelFormat.getIntArgbPreInstance());
         WritableImage image = new WritableImage(pixelBuffer);
+        double[] zBuffer = new double[GameSettings.VIEW_WIDTH];
 
         // Draw ceiling and floor
         Texture floorTex = GameSettings.FLOOR_TEXTURE;
@@ -233,6 +237,8 @@ public class RaycastRenderer {
                             }
                             pixels[x  + y * GameSettings.VIEW_WIDTH] = (int) color;
                         }
+
+                        zBuffer[x] = perpWallDist;
                     }
                 }
             };
@@ -245,6 +251,69 @@ public class RaycastRenderer {
             try {
                 threads[t].join();
             } catch (Exception ignored) { }
+        }
+
+        // SPRITE CASTING
+        ArrayList<SpriteRenderer> sprites = GameObject.<SpriteRenderer>getComponents(SpriteRenderer.class);
+        double posX = Camera.main.transform.position.x;
+        double posY = Camera.main.transform.position.y;
+        double planeX = ((CameraTransform)Camera.main.transform).xPlane;
+        double planeY = ((CameraTransform)Camera.main.transform).yPlane;
+        double dirX = Camera.main.transform.lookDirection.x;
+        double dirY = Camera.main.transform.lookDirection.y;
+
+        //after sorting the sprites, do the projection and draw them
+        for(SpriteRenderer sr : sprites) {
+            double spriteX = sr.gameObject.transform.position.x - posX;
+            double spriteY = sr.gameObject.transform.position.y - posY;
+            double invDet = 1.0 / (planeX * dirY - dirX * planeY); //required for correct matrix multiplication
+
+            double transformX = invDet * (dirY * spriteX - dirX * spriteY);
+            double transformY = invDet * (-planeY * spriteX + planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+            int spriteScreenX = (int) ((GameSettings.VIEW_WIDTH / 2) * (1 + transformX / transformY));
+
+            int spriteHeight = (int) Mathf.abs((GameSettings.VIEW_HEIGHT / (transformY)));
+
+            int drawStartY = -spriteHeight / 2 + GameSettings.VIEW_HEIGHT / 2;
+            if (drawStartY < 0) {
+                drawStartY = 0;
+            }
+
+            int drawEndY = spriteHeight / 2 + GameSettings.VIEW_HEIGHT / 2;
+            if (drawEndY >= GameSettings.VIEW_HEIGHT) {
+                drawEndY = GameSettings.VIEW_HEIGHT - 1;
+            }
+
+            //calculate width of the sprite
+            int spriteWidth = (int) Mathf.abs((GameSettings.VIEW_HEIGHT / (transformY)));
+            int drawStartX = -spriteWidth / 2 + spriteScreenX;
+            if (drawStartX < 0) {
+                drawStartX = 0;
+            }
+
+            int drawEndX = spriteWidth / 2 + spriteScreenX;
+            if (drawEndX >= GameSettings.VIEW_WIDTH) {
+                drawEndX = GameSettings.VIEW_WIDTH - 1;
+            }
+
+            Sprite spriteTexture = sr.sprites[Direction.FORWARD.getValue()];
+
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                int texX = (int) ((256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * spriteTexture.width / spriteWidth) / 256);
+                if (transformY > 0 && stripe > 0 && stripe < GameSettings.VIEW_WIDTH && transformY < zBuffer[stripe]) {
+                    for (int y = drawStartY; y < drawEndY; y++)
+                    {
+                        int d = (y) * 256 - GameSettings.VIEW_HEIGHT * 128 + spriteHeight * 128;
+                        int texY = ((d * spriteTexture.height) / spriteHeight) / 256;
+                        int color = spriteTexture.pixels[spriteTexture.width * texY + texX];
+
+                        // calculate transparency compositioning
+                        int newColor = calculateTransparencyComposition(pixels[stripe + y * GameSettings.VIEW_WIDTH], color);
+                        pixels[stripe + y * GameSettings.VIEW_WIDTH] = newColor;
+                    }
+                }
+            }
         }
 
         // update the view buffer
@@ -260,6 +329,30 @@ public class RaycastRenderer {
         rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.x, 0, 255);
         rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.y, 0, 255);
         rgb = (rgb << 8) + (int) Mathf.clamp( lerpedColor.z, 0, 255);
+        return rgb;
+    }
+
+    private static int calculateTransparencyComposition(int colorBack, int colorFront) {
+        double a1 = (colorBack >> 24) / 255d;
+        int r1 = (colorBack >> 16) & 0x00FF;
+        int g1 = (colorBack >> 8) & 0x00FF;
+        int b1 = colorBack & 0x00FF;
+
+        double a0 = (colorFront >> 24) / 255d;
+        int r0 = (colorFront >> 16) & 0x00FF;
+        int g0 = (colorFront >> 8) & 0x00FF;
+        int b0 = colorFront & 0x00FF;
+
+        double a01 = ((1 - a0) * a1 + a0);
+        int r01 = (int) (((1 - a0) * a1 * r1 + a0 * r0) / a01);
+        int g01 = (int) (((1 - a0) * a1 * g1 + a0 * g0) / a01);
+        int b01 = (int) (((1 - a0) * a1 * b1 + a0 * b0) / a01);
+
+        int rgb = (int) (a01 * 255);
+        rgb = (rgb << 8) + r01;
+        rgb = (rgb << 8) + g01;
+        rgb = (rgb << 8) + b01;
+
         return rgb;
     }
 

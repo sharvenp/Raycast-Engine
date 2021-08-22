@@ -10,16 +10,16 @@ public abstract class GameObject {
 
     public Transform transform = new Transform();
     public String tag = "";
-    public ArrayList<Behaviour> behaviours = new ArrayList<>();
+    public ArrayList<Component> components = new ArrayList<>();
 
-    public void addBehaviours(Behaviour ...behaviours) {
-        for (Behaviour behaviour : behaviours) {
-            behaviour.gameObject = this;
-            this.behaviours.add(behaviour);
+    public void addComponent(Component ...components) {
+        for (Component component : components) {
+            component.gameObject = this;
+            this.components.add(component);
         }
     }
 
-    public static <T extends GameObject> GameObject findObjectWithType(String tag) {
+    public static <T extends GameObject> T findObjectWithTag(String tag) {
         Queue<GameObject> queue = new LinkedList<GameObject>(hierarchy);
         while (!queue.isEmpty())
         {
@@ -33,7 +33,7 @@ public abstract class GameObject {
         return null;
     }
 
-    public static <T extends GameObject> ArrayList<T> findObjectsWithType(String tag) {
+    public static <T extends GameObject> ArrayList<T> findObjectsWithTag(String tag) {
 
         ArrayList<T> objects = new ArrayList<>();
 
@@ -50,41 +50,27 @@ public abstract class GameObject {
         return objects;
     }
 
-    public <T extends GameObject> GameObject findChildObjectWithTag(String tag) {
-        Queue<GameObject> queue = new LinkedList<GameObject>(transform.children);
-        while (!queue.isEmpty())
-        {
-            GameObject gameObject = queue.poll();
-            if (gameObject.tag.equals(tag)) {
-                return (T) gameObject;
-            }
-            queue.addAll(gameObject.transform.children);
-        }
+    public static <T extends Component> ArrayList<T> getComponents(Class<T> type) {
+        ArrayList<T> components = new ArrayList<>();
 
-        return null;
-    }
-
-    public <T extends GameObject> ArrayList<T> findChildObjectsWithType(String tag) {
-
-        ArrayList<T> objects = new ArrayList<>();
-
-        Queue<GameObject> queue = new LinkedList<GameObject>(transform.children);
+        Queue<GameObject> queue = new LinkedList<GameObject>(hierarchy);
         while (!queue.isEmpty())
         {
             GameObject gameObject = (GameObject) queue.poll();
-            if (gameObject.tag.equals(tag)) {
-                objects.add((T) gameObject);
+            Component component = gameObject.<T>getComponent(type);
+            if (component != null) {
+                components.add((T) component);
             }
             queue.addAll(gameObject.transform.children);
         }
 
-        return objects;
+        return components;
     }
 
-    public Behaviour findBehaviour(String classType) {
-        for (Behaviour behaviour : behaviours) {
-            if (behaviour.getClass().toString().equals(classType)) {
-                return behaviour;
+    public <T extends Component> T getComponent(Class<T> type) {
+        for (Component component : components) {
+            if (component.getClass().toString().equals(type.toString())) {
+                return type.cast(component);
             }
         }
         return null;

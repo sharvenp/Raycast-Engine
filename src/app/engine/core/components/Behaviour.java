@@ -1,8 +1,6 @@
 package app.engine.core.components;
 
-public abstract class Behaviour {
-
-    public GameObject gameObject;
+public abstract class Behaviour extends Component {
 
     public abstract void start() throws Exception;
 

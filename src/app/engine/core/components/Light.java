@@ -2,7 +2,7 @@ package app.engine.core.components;
 
 import java.awt.*;
 
-public class Light extends Behaviour {
+public class Light extends Component {
 
     public Color color;
 
@@ -13,15 +13,5 @@ public class Light extends Behaviour {
         this.color = color;
         this.radius = radius;
         this.intensity = intensity;
-    }
-
-    @Override
-    public void start() throws Exception {
-
-    }
-
-    @Override
-    public void update() {
-
     }
 }
